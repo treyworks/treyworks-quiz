@@ -1,0 +1,32 @@
+{
+  "name": "treyworks-quiz",
+  "version": "1.0.0",
+  "description": "A lightweight, customizable quiz library for creating interactive quizzes on any website",
+  "main": "dist/quiz.min.js",
+  "scripts": {
+    "build": "mkdir -p dist && cp src/quiz.js dist/quiz.js && cp src/quiz.css dist/quiz.css",
+    "minify": "uglifyjs src/quiz.js -o dist/quiz.min.js && cleancss src/quiz.css -o dist/quiz.min.css",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "quiz",
+    "survey",
+    "form",
+    "interactive",
+    "questionnaire"
+  ],
+  "author": "Treyworks",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/treyworks/quiz-library.git"
+  },
+  "bugs": {
+    "url": "https://github.com/treyworks/quiz-library/issues"
+  },
+  "homepage": "https://github.com/treyworks/quiz-library#readme",
+  "devDependencies": {
+    "clean-css-cli": "^5.6.2",
+    "uglify-js": "^3.17.4"
+  }
+}

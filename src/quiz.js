@@ -1,0 +1,418 @@
+/**
+ * Treyworks Quiz Library
+ * A lightweight, customizable quiz component that supports multiple question types
+ * including radio buttons, checkboxes, text inputs, and textareas.
+ *
+ * @version 1.0.0
+ * @author Treyworks
+ */
+window.Quiz = (function() {
+  /**
+   * Initialize a new quiz instance
+   * @param {Object} config - Configuration object for the quiz
+   * @param {string} config.container - CSS selector for the quiz container
+   * @param {Array} config.questions - Array of question objects
+   * @param {string} config.submitUrl - URL to submit quiz results
+   * @param {string} [config.submitTitle] - Title for the submission form
+   * @param {string} [config.submitButtonText] - Text for the submit button
+   * @param {Function} [config.onComplete] - Callback after successful submission
+   * @param {boolean} [config.showProgressBar=true] - Whether to show the progress bar
+   * @param {boolean} [config.showQuestionCount=false] - Whether to show question count (e.g., "1 / 10")
+   * @param {string|Object} [config.successMessage] - Success message or HTML to show after submission
+   * @returns {void}
+   */
+  function init(config) {
+    const container = document.querySelector(config.container);
+    const questions = config.questions;
+    const total = questions.length;
+    const responses = {};
+
+    // Store configuration values
+    const submitUrl = config.submitUrl; // URL endpoint for submitting quiz results
+    const showProgressBar = config.showProgressBar !== undefined ? config.showProgressBar : true;
+    const showQuestionCount = config.showQuestionCount !== undefined ? config.showQuestionCount : false;
+
+    // Create progress bar to show quiz completion status (if enabled)
+    let progress, bar;
+    if (showProgressBar) {
+      progress = document.createElement('div');
+      progress.className = 'quiz-progress';
+      const bar = document.createElement('div');
+      bar.className = 'quiz-progress-bar';
+      bar.style.width = '0%';
+      progress.appendChild(bar);
+      container.appendChild(progress);
+    }
+
+    // Create card container for each question in the quiz
+    questions.forEach((q, idx) => {
+      const card = document.createElement('div');
+      card.className = 'quiz-card';
+      if (idx === 0) card.classList.add('active');
+      card.dataset.index = idx;
+
+      // Create question header with optional question count
+      const questionHeader = document.createElement('div');
+      questionHeader.className = 'quiz-question-header';
+      
+      // Create the main question text
+      const h = document.createElement('h3');
+      h.className = 'quiz-question';
+      h.textContent = showQuestionCount ? q.question : `${idx+1}. ${q.question}`;
+      questionHeader.appendChild(h);
+      
+      // Add question counter if enabled
+      if (showQuestionCount) {
+        const counter = document.createElement('div');
+        counter.className = 'quiz-question-counter';
+        counter.textContent = `${idx+1} / ${total}`;
+        questionHeader.appendChild(counter);
+      }
+      
+      card.appendChild(questionHeader);
+
+      const ul = document.createElement('ul');
+      ul.className = 'quiz-options';
+      q.options.forEach(opt => {
+        const li = document.createElement('li');
+        li.className = 'quiz-option';
+        
+        /**
+         * Handle different input types: radio, checkbox, text, textarea
+         * The library supports four types of inputs:
+         * 1. Radio buttons (single choice) - default when multiple=false
+         * 2. Checkboxes (multiple choice) - when multiple=true
+         * 3. Text inputs (single line) - when type='text'
+         * 4. Textareas (multiline) - when type='textarea'
+         */
+        if (opt.type === 'text' || opt.type === 'textarea') {
+          // Text input (single or multiline)
+          const labelWrapper = document.createElement('div');
+          labelWrapper.className = 'quiz-label-wrapper';
+          
+          const label = document.createElement('label');
+          label.className = 'quiz-text-label';
+          label.textContent = opt.label;
+          labelWrapper.appendChild(label);
+          li.appendChild(labelWrapper);
+          
+          // Create appropriate input element
+          const inputWrapper = document.createElement('div');
+          inputWrapper.className = 'quiz-input-wrapper';
+          
+          const inp = opt.type === 'textarea' 
+            ? document.createElement('textarea')
+            : document.createElement('input');
+          
+          if (opt.type === 'text') inp.type = 'text';
+          inp.name = `q${idx}`;
+          inp.className = 'quiz-input quiz-input-fullwidth';
+          inp.placeholder = opt.placeholder || '';
+          
+          // Add required attribute if specified
+          if (opt.required) {
+            inp.required = true;
+            label.innerHTML = `${opt.label} <span class="quiz-required">*</span>`;
+          }
+          
+          if (opt.rows && opt.type === 'textarea') {
+            inp.rows = opt.rows;
+          }
+          
+          inputWrapper.appendChild(inp);
+          li.appendChild(inputWrapper);
+          
+          // Add special class to the list item for text inputs
+          li.classList.add('quiz-option-text');
+        } else {
+          // Standard radio/checkbox options
+          const label = document.createElement('label');
+          label.className = 'quiz-option-label';
+          
+          const inp = document.createElement('input');
+          inp.className = 'quiz-checkbox-radio';
+          inp.type = q.multiple ? 'checkbox' : 'radio';
+          inp.name = `q${idx}`;
+          inp.value = opt.value;
+          
+          const span = document.createElement('span');
+          span.className = 'quiz-option-text';
+          span.textContent = opt.label;
+          
+          label.appendChild(inp);
+          label.appendChild(span);
+          li.appendChild(label);
+        }
+        
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+
+      // Create navigation buttons (Previous/Next)
+      const btns = document.createElement('div');
+      btns.className = 'quiz-buttons';
+      
+      // Previous button - disabled on first question
+      const prev = document.createElement('button');
+      prev.textContent = 'Previous'; 
+      prev.className = 'quiz-btn quiz-btn-secondary';
+      prev.disabled = idx===0; // Disable on first question
+      prev.addEventListener('click', () => navigate(-1));
+      
+      // Next/Submit button - changes text on last question
+      const next = document.createElement('button');
+      next.textContent = idx===total-1 ? 'Submit' : 'Next'; // Change text on last card
+      next.className = 'quiz-btn quiz-btn-primary';
+      next.addEventListener('click', () => navigate(1));
+      btns.appendChild(prev);
+      btns.appendChild(next);
+      card.appendChild(btns);
+
+      container.appendChild(card);
+    });
+
+    /**
+     * Helper: show non-intrusive alert on a card
+     * Creates or updates an alert message for validation errors
+     * @param {string} msg - The alert message to display
+     * @param {HTMLElement} card - The card element to show the alert on
+     * @returns {void}
+     */
+    function showAlert(msg, card) {
+      let alertDiv = card.querySelector('.quiz-alert');
+      if (!alertDiv) {
+        alertDiv = document.createElement('div');
+        alertDiv.className = 'quiz-alert';
+        card.querySelector('.quiz-buttons').before(alertDiv);
+      }
+      alertDiv.textContent = msg;
+    }
+
+    /**
+     * Helper: clear alert from a card
+     * Removes any existing alert messages from the card
+     * @param {HTMLElement} card - The card element to clear alerts from
+     * @returns {void}
+     */
+    function clearAlert(card) {
+      const alertDiv = card.querySelector('.quiz-alert');
+      if (alertDiv) alertDiv.remove();
+    }
+
+    /**
+     * Compile quiz results into a formatted string
+     * Formats all question responses for submission, handling different input types
+     * @returns {string} Formatted string with all question responses
+     */
+    function compileResults() {
+      return questions.map((q, i) => {
+        const ans = responses[`q${i}`] || [];
+        
+        // Handle text responses differently
+        const hasTextInputs = q.options.some(opt => opt.type === 'text' || opt.type === 'textarea');
+        
+        if (hasTextInputs) {
+          // For text inputs, include the question labels with responses
+          return `${i+1}. ${q.question}:\n${q.options.map((opt, j) => {
+            const response = ans[j] || '';
+            return `   ${opt.label}: ${response}`;
+          }).join('\n')}`;
+        } else {
+          // For regular radio/checkbox options
+          return `${i+1}. ${q.question}: ${ans.join(', ')}`;
+        }
+      }).join('\n');
+    }
+
+    /**
+     * Display a success message after quiz submission
+     * @param {string|Object} message - Success message text or HTML content
+     * @returns {void}
+     */
+    function showSuccessMessage(message) {
+      container.innerHTML = '';
+      const successContainer = document.createElement('div');
+      successContainer.className = 'quiz-success-container';
+      
+      // Create success icon
+      const iconContainer = document.createElement('div');
+      iconContainer.className = 'quiz-success-icon';
+      iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-.997-4L6.76 11.757l1.414-1.414 2.829 2.829 5.656-5.657 1.415 1.414L11.003 16z" fill="currentColor"/></svg>';
+      successContainer.appendChild(iconContainer);
+      
+      // Create message container
+      const messageContainer = document.createElement('div');
+      messageContainer.className = 'quiz-success-message';
+      
+      // Handle different message types
+      if (typeof message === 'string') {
+        messageContainer.textContent = message;
+      } else if (typeof message === 'object') {
+        // If message is an HTML object or element
+        if (message.html) {
+          messageContainer.innerHTML = message.html;
+        } else if (message.text) {
+          messageContainer.textContent = message.text;
+        }
+      }
+      
+      successContainer.appendChild(messageContainer);
+      container.appendChild(successContainer);
+    }
+    
+    /**
+     * Show email submission form
+     * Displays the final form for collecting email and submitting results
+     * @returns {void}
+     */
+    function showSubmit() {
+      container.innerHTML = '';
+      const div = document.createElement('div');
+      div.className = 'quiz-submit-container';
+      const title = config.submitTitle || 'Enter your email to receive your AI action plan';
+      
+      // Create title
+      const titleEl = document.createElement('h3');
+      titleEl.className = 'quiz-submit-title';
+      titleEl.textContent = title;
+      div.appendChild(titleEl);
+      
+      // Create label and input wrapper
+      const inputWrapper = document.createElement('div');
+      inputWrapper.className = 'quiz-input-wrapper';
+      
+      // Create email input
+      const input = document.createElement('input');
+      input.type = 'email';
+      input.className = 'quiz-input quiz-input-fullwidth';
+      input.placeholder = 'Email address';
+      inputWrapper.appendChild(input);
+      div.appendChild(inputWrapper);
+      
+      // Create alert container
+      const alertEl = document.createElement('div');
+      alertEl.className = 'quiz-alert';
+      div.appendChild(alertEl);
+      
+      // Create button
+      const btnWrapper = document.createElement('div');
+      btnWrapper.className = 'quiz-btn-wrapper';
+      const btn = document.createElement('button');
+      btn.className = 'quiz-btn quiz-btn-primary quiz-mt-3';
+      btn.textContent = config.submitButtonText || 'Send me the plan';
+      btnWrapper.appendChild(btn);
+      div.appendChild(btnWrapper);
+      btn.addEventListener('click', () => {
+        alertEl.textContent = '';
+        const email = input.value.trim();
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+          alertEl.textContent = 'Please enter a valid email.';
+          return;
+        }
+        fetch(submitUrl, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ email, results: compileResults() })
+        }).then(res => {
+          if (res.ok) {
+            // Handle successful submission
+            if (config.onComplete) {
+              // If onComplete callback is provided, use it
+              container.innerHTML = config.onComplete(responses);
+            } else if (config.successMessage) {
+              // If successMessage is provided, display it
+              showSuccessMessage(config.successMessage);
+            } else {
+              // Default success message
+              showSuccessMessage('Thank you! Your submission has been received.');
+            }
+          } else {
+            alertEl.textContent = 'Submission failed. Try again.';
+          }
+        }).catch(()=> alertEl.textContent = 'Submission error.');
+      });
+      container.appendChild(div);
+    }
+
+    /**
+     * Navigate between quiz cards
+     * Handles validation, data collection, and navigation between questions
+     * @param {number} step - Direction to navigate: 1 for next, -1 for previous
+     * @returns {void}
+     */
+    function navigate(step) {
+      const cards = container.querySelectorAll('.quiz-card');
+      const active = container.querySelector('.quiz-card.active');
+      const idx = parseInt(active.dataset.index,10);
+      if (step > 0) { // Moving forward - validate and collect responses
+        // Get the question type to determine validation logic
+        const question = questions[idx];
+        const hasTextInputs = question.options.some(opt => opt.type === 'text' || opt.type === 'textarea');
+        
+        if (hasTextInputs) {
+          // Handle text/textarea inputs - collect values and validate required fields
+          const textInputs = active.querySelectorAll('input[type="text"], textarea');
+          const values = Array.from(textInputs).map(input => input.value.trim());
+          
+          // Check if any required text inputs are empty
+          const emptyRequired = Array.from(textInputs)
+            .some(input => input.required && input.value.trim() === '');
+            
+          // Highlight empty required fields
+          if (emptyRequired) {
+            Array.from(textInputs).forEach(input => {
+              if (input.required && input.value.trim() === '') {
+                input.classList.add('quiz-input-error');
+              } else {
+                input.classList.remove('quiz-input-error');
+              }
+            });
+          }
+            
+          if (emptyRequired) {
+            showAlert('Please fill in all required fields.', active); 
+            return; 
+          }
+          
+          clearAlert(active);
+          responses[`q${idx}`] = values;
+        } else {
+          // Handle radio/checkbox inputs - validate at least one option is selected
+          const inputs = active.querySelectorAll('input');
+          const checked = Array.from(inputs).filter(i => i.checked);
+          
+          // Validation: require at least one selection
+          if (checked.length === 0) { 
+            showAlert('Please select an option.', active); 
+            return; 
+          }
+          
+          clearAlert(active);
+          // Store selected values in responses object
+          responses[`q${idx}`] = checked.map(i => i.value);
+        }
+      } else { // Moving backward - just clear any alerts
+        clearAlert(active);
+      }
+      // Remove active class from current card
+      active.classList.remove('active');
+      const nextIdx = idx+step;
+      
+      if (nextIdx < questions.length) {
+        // Show the next/previous card
+        container.querySelector(`.quiz-card[data-index="${nextIdx}"]`).classList.add('active');
+        // Update progress bar if enabled
+        if (showProgressBar) {
+          progress.querySelector('.quiz-progress-bar').style.width = `${(nextIdx)/total*100}%`;
+        }
+      } else {
+        // Quiz completed: show email submission form
+        if (showProgressBar) {
+          progress.querySelector('.quiz-progress-bar').style.width = '100%';
+        }
+        showSubmit();
+      }
+    }
+  }
+  return { init };
+})();
