@@ -169,9 +169,9 @@ window.Quiz = (function() {
       prev.disabled = idx===0; // Disable on first question
       prev.addEventListener('click', () => navigate(-1));
       
-      // Next/Submit button - changes text on last question
+      // Next/Finish button - changes text on last question
       const next = document.createElement('button');
-      next.textContent = idx===total-1 ? 'Submit' : 'Next'; // Change text on last card
+      next.textContent = idx===total-1 ? 'Finish' : 'Next'; // Change text on last card
       next.className = 'quiz-btn quiz-btn-primary';
       next.addEventListener('click', () => navigate(1));
       btns.appendChild(prev);
@@ -423,27 +423,33 @@ window.Quiz = (function() {
           }
         }
         
-        // Prepare submission data
-        const submissionData = {
-          email,
-          results: compileResults()
-        };
+        // At this point, all validation has passed
+        // Disable the button to prevent multiple submissions
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+        
+        // Prepare submission data using URLSearchParams (form URL encoded format)
+        // This can help avoid the OPTIONS preflight request in some cases
+        const formData = new URLSearchParams();
+        formData.append('email', email);
+        formData.append('results', compileResults());
         
         // Add name fields if present
         if (showNameFields) {
-          submissionData.first_name = firstNameInput.value.trim();
-          submissionData.last_name = lastNameInput.value.trim();
+          formData.append('first_name', firstNameInput.value.trim());
+          formData.append('last_name', lastNameInput.value.trim());
         }
         
         // Add phone if present
         if (showPhoneField) {
-          submissionData.phone = phoneInput.value.trim();
+          formData.append('phone', phoneInput.value.trim());
         }
         
+        // Use form URL encoded format instead of JSON
         fetch(submitUrl, {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify(submissionData)
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: formData
         }).then(res => {
           if (res.ok) {
             // Handle successful submission

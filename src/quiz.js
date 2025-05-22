@@ -423,6 +423,11 @@ window.Quiz = (function() {
           }
         }
         
+        // At this point, all validation has passed
+        // Disable the button to prevent multiple submissions
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+        
         // Prepare submission data
         const submissionData = {
           email,
