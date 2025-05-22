@@ -120,6 +120,11 @@ Check out the [examples directory](examples/) for complete working examples:
 | `successMessage` | String/Object | 'Thank you! Your submission has been received.' | Message to display after successful submission |
 | `showProgressBar` | Boolean | true | Whether to show the progress bar at the top of the quiz |
 | `showQuestionCount` | Boolean | false | Whether to show question count (e.g., "1 / 10") |
+| `emailRequired` | Boolean | false | Whether the email field is required |
+| `showNameFields` | Boolean | false | Whether to show first and last name fields |
+| `nameFieldsRequired` | Boolean | false | Whether the name fields are required |
+| `showPhoneField` | Boolean | false | Whether to show phone number field |
+| `phoneFieldRequired` | Boolean | false | Whether the phone field is required |
 
 For more detailed documentation on all available options and methods, see the [full documentation](docs/README.md).
 
