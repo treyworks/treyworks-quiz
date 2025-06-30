@@ -246,12 +246,6 @@ window.Quiz = (function() {
       const successContainer = document.createElement('div');
       successContainer.className = 'quiz-success-container';
       
-      // Create success icon
-      const iconContainer = document.createElement('div');
-      iconContainer.className = 'quiz-success-icon';
-      iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-.997-4L6.76 11.757l1.414-1.414 2.829 2.829 5.656-5.657 1.415 1.414L11.003 16z" fill="currentColor"/></svg>';
-      successContainer.appendChild(iconContainer);
-      
       // Create message container
       const messageContainer = document.createElement('div');
       messageContainer.className = 'quiz-success-message';
@@ -307,42 +301,74 @@ window.Quiz = (function() {
         nameWrapper.className = 'quiz-input-wrapper quiz-name-fields';
         
         // First name input
+        const firstNameLabel = document.createElement('label');
+        firstNameLabel.className = 'quiz-label';
+        firstNameLabel.textContent = nameFieldsRequired ? 'First name (required)' : 'First name';
+        
         firstNameInput = document.createElement('input');
         firstNameInput.type = 'text';
         firstNameInput.className = 'quiz-input quiz-input-half';
-        firstNameInput.placeholder = 'First name';
+        firstNameInput.placeholder = 'Enter your first name';
+        firstNameInput.id = 'quiz-first-name';
+        firstNameLabel.htmlFor = 'quiz-first-name';
         if (nameFieldsRequired) {
           firstNameInput.required = true;
-          firstNameInput.placeholder = 'First name (required)';
         }
         
         // Last name input
+        const lastNameLabel = document.createElement('label');
+        lastNameLabel.className = 'quiz-label';
+        lastNameLabel.textContent = nameFieldsRequired ? 'Last name (required)' : 'Last name';
+        
         lastNameInput = document.createElement('input');
         lastNameInput.type = 'text';
         lastNameInput.className = 'quiz-input quiz-input-half';
-        lastNameInput.placeholder = 'Last name';
+        lastNameInput.placeholder = 'Enter your last name';
+        lastNameInput.id = 'quiz-last-name';
+        lastNameLabel.htmlFor = 'quiz-last-name';
         if (nameFieldsRequired) {
           lastNameInput.required = true;
-          lastNameInput.placeholder = 'Last name (required)';
         }
         
-        nameWrapper.appendChild(firstNameInput);
-        nameWrapper.appendChild(lastNameInput);
+        const firstNameDiv = document.createElement('div');
+        firstNameDiv.className = 'quiz-field-container';
+        firstNameDiv.appendChild(firstNameLabel);
+        firstNameDiv.appendChild(firstNameInput);
+        
+        const lastNameDiv = document.createElement('div');
+        lastNameDiv.className = 'quiz-field-container';
+        lastNameDiv.appendChild(lastNameLabel);
+        lastNameDiv.appendChild(lastNameInput);
+        
+        nameWrapper.appendChild(firstNameDiv);
+        nameWrapper.appendChild(lastNameDiv);
         div.appendChild(nameWrapper);
       }
       
       // Create email input
       const emailWrapper = document.createElement('div');
       emailWrapper.className = 'quiz-input-wrapper';
+      
+      const emailLabel = document.createElement('label');
+      emailLabel.className = 'quiz-label';
+      emailLabel.textContent = emailRequired ? 'Email address (required)' : 'Email address';
+      emailLabel.htmlFor = 'quiz-email';
+      
       const emailInput = document.createElement('input');
       emailInput.type = 'email';
       emailInput.className = 'quiz-input quiz-input-fullwidth';
-      emailInput.placeholder = 'Email address';
+      emailInput.placeholder = 'Enter your email address';
+      emailInput.id = 'quiz-email';
       if (emailRequired) {
         emailInput.required = true;
-        emailInput.placeholder = 'Email address (required)';
       }
-      emailWrapper.appendChild(emailInput);
+      
+      const emailFieldContainer = document.createElement('div');
+      emailFieldContainer.className = 'quiz-field-container';
+      emailFieldContainer.appendChild(emailLabel);
+      emailFieldContainer.appendChild(emailInput);
+      
+      emailWrapper.appendChild(emailFieldContainer);
       div.appendChild(emailWrapper);
       
       // Create phone input if enabled
@@ -350,15 +376,27 @@ window.Quiz = (function() {
       if (showPhoneField) {
         const phoneWrapper = document.createElement('div');
         phoneWrapper.className = 'quiz-input-wrapper';
+        const phoneLabel = document.createElement('label');
+        phoneLabel.className = 'quiz-label';
+        phoneLabel.textContent = phoneFieldRequired ? 'Phone number (required)' : 'Phone number';
+        phoneLabel.htmlFor = 'quiz-phone';
+        
         phoneInput = document.createElement('input');
         phoneInput.type = 'tel';
         phoneInput.className = 'quiz-input quiz-input-fullwidth';
         phoneInput.placeholder = 'Phone number';
+        phoneInput.id = 'quiz-phone';
         if (phoneFieldRequired) {
           phoneInput.required = true;
           phoneInput.placeholder = 'Phone number (required)';
         }
-        phoneWrapper.appendChild(phoneInput);
+        
+        const phoneFieldContainer = document.createElement('div');
+        phoneFieldContainer.className = 'quiz-field-container';
+        phoneFieldContainer.appendChild(phoneLabel);
+        phoneFieldContainer.appendChild(phoneInput);
+        
+        phoneWrapper.appendChild(phoneFieldContainer);
         div.appendChild(phoneWrapper);
       }
       
