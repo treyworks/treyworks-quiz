@@ -3,7 +3,7 @@
  * A lightweight, customizable quiz component that supports multiple question types
  * including radio buttons, checkboxes, text inputs, and textareas.
  *
- * @version 1.0.0
+ * @version 1.1.0
  * @author Treyworks
  */
 window.Quiz = (function() {
@@ -24,6 +24,7 @@ window.Quiz = (function() {
    * @param {boolean} [config.showPhoneField=false] - Whether to show phone number field
    * @param {boolean} [config.phoneFieldRequired=false] - Whether the phone field is required
    * @param {string|Object} [config.successMessage] - Success message or HTML to show after submission
+   * @param {boolean} [config.useResponseMessage=false] - If true, displays the message property from the response JSON instead of the static successMessage
    * @returns {void}
    */
   function init(config) {
@@ -41,6 +42,7 @@ window.Quiz = (function() {
     const nameFieldsRequired = config.nameFieldsRequired !== undefined ? config.nameFieldsRequired : false;
     const showPhoneField = config.showPhoneField !== undefined ? config.showPhoneField : false;
     const phoneFieldRequired = config.phoneFieldRequired !== undefined ? config.phoneFieldRequired : false;
+    const useResponseMessage = config.useResponseMessage !== undefined ? config.useResponseMessage : false;
 
     // Create progress bar to show quiz completion status (if enabled)
     let progress, bar;
@@ -256,7 +258,14 @@ window.Quiz = (function() {
       
       // Handle different message types
       if (typeof message === 'string') {
-        messageContainer.textContent = message;
+        // Check if the string contains HTML tags
+        if (/<[a-z][\s\S]*>/i.test(message)) {
+          // If it contains HTML tags, use innerHTML to render them
+          messageContainer.innerHTML = message;
+        } else {
+          // Otherwise use textContent for security
+          messageContainer.textContent = message;
+        }
       } else if (typeof message === 'object') {
         // If message is an HTML object or element
         if (message.html) {
@@ -363,7 +372,17 @@ window.Quiz = (function() {
       btnWrapper.className = 'quiz-btn-wrapper';
       const btn = document.createElement('button');
       btn.className = 'quiz-btn quiz-btn-primary quiz-mt-3';
-      btn.textContent = config.submitButtonText || 'Send me the plan';
+      
+      // Create button text span to keep text and loading indicator separate
+      const btnTextSpan = document.createElement('span');
+      btnTextSpan.textContent = config.submitButtonText || 'Send me the plan';
+      btn.appendChild(btnTextSpan);
+      
+      // Create loading indicator
+      const loadingIndicator = document.createElement('span');
+      loadingIndicator.className = 'quiz-loading';
+      btn.appendChild(loadingIndicator);
+      
       btnWrapper.appendChild(btn);
       div.appendChild(btnWrapper);
       btn.addEventListener('click', () => {
@@ -426,7 +445,8 @@ window.Quiz = (function() {
         // At this point, all validation has passed
         // Disable the button to prevent multiple submissions
         btn.disabled = true;
-        btn.textContent = 'Submitting...';
+        btn.classList.add('submitting');
+        btnTextSpan.textContent = 'Submitting...';
         
         // Prepare submission data
         const submissionData = {
@@ -450,13 +470,25 @@ window.Quiz = (function() {
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify(submissionData)
         }).then(res => {
+          // Remove loading state regardless of result
+          btn.classList.remove('submitting');
+          
           if (res.ok) {
             // Handle successful submission
             if (config.onComplete) {
               // If onComplete callback is provided, use it
               container.innerHTML = config.onComplete(responses);
+            } else if (useResponseMessage) {
+              // Get message from response text directly if useResponseMessage is enabled
+              res.text().then(text => {
+                // Use the entire response text as the message
+                showSuccessMessage(text || config.successMessage || 'Thank you! Your submission has been received.');
+              }).catch(() => {
+                // Fallback if response reading fails
+                showSuccessMessage(config.successMessage || 'Thank you! Your submission has been received.');
+              });
             } else if (config.successMessage) {
-              // If successMessage is provided, display it
+              // If successMessage is provided and useResponseMessage is false, display static message
               showSuccessMessage(config.successMessage);
             } else {
               // Default success message
@@ -464,8 +496,15 @@ window.Quiz = (function() {
             }
           } else {
             alertEl.textContent = 'Submission failed. Try again.';
+            btn.disabled = false;
+            btnTextSpan.textContent = config.submitButtonText || 'Send me the plan';
           }
-        }).catch(()=> alertEl.textContent = 'Submission error.');
+        }).catch(() => {
+          alertEl.textContent = 'Submission error.';
+          btn.disabled = false;
+          btn.classList.remove('submitting');
+          btnTextSpan.textContent = config.submitButtonText || 'Send me the plan';
+        });
       });
       container.appendChild(div);
     }

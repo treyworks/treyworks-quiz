@@ -14,6 +14,7 @@ A lightweight, customizable quiz library for creating interactive quizzes on any
 - Progress bar that can be shown/hidden via configuration
 - Question counter display (e.g., "1 / 10") that can be toggled
 - Custom success messages after form submission
+- Support for dynamic success messages from server responses
 - Comprehensive styling with namespaced CSS classes
 - No external dependencies
 
@@ -29,10 +30,10 @@ npm install treyworks-quiz
 
 ```html
 <!-- CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treyworks-quiz@1.0.0/dist/quiz.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treyworks-quiz@1.1.0/dist/quiz.min.css">
 
 <!-- JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/treyworks-quiz@1.0.0/dist/quiz.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/treyworks-quiz@1.1.0/dist/quiz.min.js"></script>
 ```
 
 ### Direct Download
@@ -89,7 +90,9 @@ document.addEventListener('DOMContentLoaded', function() {
   Quiz.init({
     container: '#quiz',
     submitUrl: '/api/submit-quiz',
-    questions: MY_QUESTIONS
+    questions: MY_QUESTIONS,
+    // Optional: Show dynamic message from server response
+    useResponseMessage: true
   });
 });
 ```
@@ -97,6 +100,30 @@ document.addEventListener('DOMContentLoaded', function() {
 ## Documentation
 
 For detailed documentation, see the [docs folder](docs/README.md) or visit our [documentation site](https://treyworks.github.io/quiz-library/).
+
+## Dynamic Success Messages
+
+Starting with version 1.1.0, you can choose between displaying a static success message or one returned dynamically from your server's response:
+
+```javascript
+Quiz.init({
+  // ... other options
+  
+  // Option 1: Static success message (default behavior)
+  successMessage: 'Thank you for completing the quiz!',
+  
+  // Option 2: Dynamic success message from server
+  useResponseMessage: true  // Displays message from server response
+});
+```
+
+When `useResponseMessage` is set to `true`, the entire response text from the server will be displayed as the success message:
+
+```
+Thank you, John! Your personalized results will be emailed to you shortly.
+```
+
+If the response is empty, the library will fall back to the static `successMessage` or the default success message.
 
 ## Examples
 

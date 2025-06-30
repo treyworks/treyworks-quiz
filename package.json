@@ -4,8 +4,7 @@
   "description": "A lightweight, customizable quiz library for creating interactive quizzes on any website",
   "main": "dist/quiz.min.js",
   "scripts": {
-    "build": "mkdir -p dist && cp src/quiz.js dist/quiz.js && cp src/quiz.css dist/quiz.css",
-    "minify": "uglifyjs src/quiz.js -o dist/quiz.min.js && cleancss src/quiz.css -o dist/quiz.min.css",
+    "build": "uglifyjs src/quiz.js -o dist/quiz.min.js && cleancss src/quiz.css -o dist/quiz.min.css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
