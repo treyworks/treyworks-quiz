@@ -217,6 +217,38 @@ textarea.quiz-input {
   resize: vertical;
 }
 
+/* Consent Checkbox Styling */
+.quiz-consent-wrapper {
+  margin: 1.5rem 0;
+}
+
+.quiz-consent-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.quiz-consent-checkbox {
+  margin-top: 0.25rem;
+  cursor: pointer;
+}
+
+.quiz-consent-label {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.quiz-privacy-link {
+  color: #2980b9;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.quiz-privacy-link:hover {
+  color: #1a5a82;
+}
+
 /* Button Container */
 .quiz-buttons {
   display: flex;

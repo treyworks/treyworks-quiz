@@ -3,7 +3,7 @@
  * A lightweight, customizable quiz component that supports multiple question types
  * including radio buttons, checkboxes, text inputs, and textareas.
  *
- * @version 1.1.0
+ * @version 1.0.2
  * @author Treyworks
  */
 window.Quiz = (function() {
@@ -34,15 +34,19 @@ window.Quiz = (function() {
     const responses = {};
 
     // Store configuration values
-    const submitUrl = config.submitUrl; // URL endpoint for submitting quiz results
+    const submitUrl = config.submitUrl || '';
     const showProgressBar = config.showProgressBar !== undefined ? config.showProgressBar : true;
     const showQuestionCount = config.showQuestionCount !== undefined ? config.showQuestionCount : false;
-    const emailRequired = config.emailRequired !== undefined ? config.emailRequired : false;
-    const showNameFields = config.showNameFields !== undefined ? config.showNameFields : false;
-    const nameFieldsRequired = config.nameFieldsRequired !== undefined ? config.nameFieldsRequired : false;
-    const showPhoneField = config.showPhoneField !== undefined ? config.showPhoneField : false;
-    const phoneFieldRequired = config.phoneFieldRequired !== undefined ? config.phoneFieldRequired : false;
-    const useResponseMessage = config.useResponseMessage !== undefined ? config.useResponseMessage : false;
+    const emailRequired = config.emailRequired !== undefined ? config.emailRequired : true;
+    const showNameFields = config.showNameFields || false;
+    const nameFieldsRequired = config.nameFieldsRequired || false;
+    const showPhoneField = config.showPhoneField || false;
+    const phoneFieldRequired = config.phoneFieldRequired || false;
+    const successMessage = config.successMessage || 'Thank you! Your submission has been received.';
+    const useResponseMessage = config.useResponseMessage || false;
+    const consentRequired = config.consentRequired || false;
+    const consentMessage = config.consentMessage || 'I agree to receive communications and accept the privacy policy.';
+    const privacyPolicyLink = config.privacyPolicyLink || '';
 
     // Create progress bar to show quiz completion status (if enabled)
     let progress, bar;
@@ -400,6 +404,52 @@ window.Quiz = (function() {
         div.appendChild(phoneWrapper);
       }
       
+      // Create consent checkbox if required
+      let consentCheckbox;
+      if (consentRequired) {
+        const consentWrapper = document.createElement('div');
+        consentWrapper.className = 'quiz-input-wrapper quiz-consent-wrapper';
+        
+        consentCheckbox = document.createElement('input');
+        consentCheckbox.type = 'checkbox';
+        consentCheckbox.className = 'quiz-consent-checkbox';
+        consentCheckbox.id = 'quiz-consent';
+        if (consentRequired) {
+          consentCheckbox.required = true;
+        }
+        
+        const consentLabel = document.createElement('label');
+        consentLabel.className = 'quiz-consent-label';
+        consentLabel.htmlFor = 'quiz-consent';
+        
+        // Create label text content
+        consentLabel.textContent = consentMessage;
+        
+        // Add privacy policy link if provided
+        if (privacyPolicyLink) {
+          // Add space after consent message
+          consentLabel.appendChild(document.createTextNode(' '));
+          
+          // Create privacy policy link
+          const privacyLink = document.createElement('a');
+          privacyLink.href = privacyPolicyLink;
+          privacyLink.className = 'quiz-privacy-link';
+          privacyLink.textContent = 'View Privacy Policy.';
+          privacyLink.target = '_blank';
+          privacyLink.rel = 'noopener noreferrer';
+          
+          consentLabel.appendChild(privacyLink);
+        }
+        
+        const consentContainer = document.createElement('div');
+        consentContainer.className = 'quiz-consent-container';
+        consentContainer.appendChild(consentCheckbox);
+        consentContainer.appendChild(consentLabel);
+        
+        consentWrapper.appendChild(consentContainer);
+        div.appendChild(consentWrapper);
+      }
+      
       // Create alert container
       const alertEl = document.createElement('div');
       alertEl.className = 'quiz-alert';
@@ -501,6 +551,11 @@ window.Quiz = (function() {
         // Add phone if present
         if (showPhoneField) {
           submissionData.phone = phoneInput.value.trim();
+        }
+        
+        // Add consent if present
+        if (consentRequired) {
+          submissionData.consent = consentCheckbox.checked;
         }
         
         fetch(submitUrl, {

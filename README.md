@@ -15,6 +15,7 @@ A lightweight, customizable quiz library for creating interactive quizzes on any
 - Question counter display (e.g., "1 / 10") that can be toggled
 - Custom success messages after form submission
 - Support for dynamic success messages from server responses
+- Optional user consent checkbox with customizable message
 - Comprehensive styling with namespaced CSS classes
 - No external dependencies
 
@@ -113,7 +114,12 @@ Quiz.init({
   successMessage: 'Thank you for completing the quiz!',
   
   // Option 2: Dynamic success message from server
-  useResponseMessage: true  // Displays message from server response
+  useResponseMessage: true,  // Displays message from server response
+  
+  // User consent checkbox
+  consentRequired: true, // Shows and requires consent checkbox
+  consentMessage: 'I agree to receive marketing communications and accept the terms of service.',
+  privacyPolicyLink: 'https://example.com/privacy' // Adds a "View Privacy Policy" link after consent message
 });
 ```
 
@@ -152,6 +158,9 @@ Check out the [examples directory](examples/) for complete working examples:
 | `nameFieldsRequired` | Boolean | false | Whether the name fields are required |
 | `showPhoneField` | Boolean | false | Whether to show phone number field |
 | `phoneFieldRequired` | Boolean | false | Whether the phone field is required |
+| `consentRequired` | Boolean | false | Whether to show and require a consent checkbox |
+| `consentMessage` | String | 'I agree to receive communications and accept the privacy policy.' | Message to display next to consent checkbox |
+| `privacyPolicyLink` | String | '' | URL for privacy policy page. If provided, adds a "View Privacy Policy" link after consent message |
 
 For more detailed documentation on all available options and methods, see the [full documentation](docs/README.md).
 
